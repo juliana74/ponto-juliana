@@ -8,6 +8,7 @@
 - [x] Task 3: Implementar interface interativa de Ponto (`js/app.js` com PinPad Virtual, relógio e modais).
 - [x] Task 4: Implementar Módulo Antifraude de Atestados e Suíte de Testes (`tests/kioskService.test.js`).
 - [x] Task 5: Testes de Integração e Verificação Visual Playwright.
+- [x] Task 6: Implementar Cadastro de Funcionário com Foto Facial (`cadastro.html`, `js/cadastro.js` e RPC `cadastrar_funcionario`).
 
 ## [Em Andamento]
 

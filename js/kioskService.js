@@ -1,6 +1,6 @@
 /**
  * KIOSKSERVICE.JS - Serviço de Comunicação com RPCs do Supabase
- * Executa as chamadas `registrar_entrada`, `registrar_saida` e `cadastrar_justificativa_antifraude`.
+ * Executa as chamadas `registrar_entrada`, `registrar_saida`, `cadastrar_justificativa_antifraude` e `cadastrar_funcionario`.
  * Inclui modo simulador/mock inteligente caso o Supabase não esteja conectado.
  */
 
@@ -8,11 +8,57 @@ const KioskService = {
     // Memória local do Mock para testes sem conexão real com Supabase
     _mockData: {
         funcionarios: {
-            '1001': { nome: 'Ana Silva', pin: '1234' },
-            '1002': { nome: 'Carlos Oliveira', pin: '5678' }
+            '1001': { nome: 'Ana Silva', pin: '1234', fotoFacial: null },
+            '1002': { nome: 'Carlos Oliveira', pin: '5678', fotoFacial: null }
         },
         justificativasHashes: new Set(), // Armazena hashes SHA-256 de arquivos já enviados
         registros: []
+    },
+
+    /**
+     * Cadastra novo funcionário com Matrícula, Nome, PIN e Foto Facial
+     */
+    cadastrarFuncionario: async function(matricula, nome, pin, fotoFacialUrl = null) {
+        if (typeof supabaseClient !== 'undefined' && supabaseClient && typeof SUPABASE_URL !== 'undefined' && SUPABASE_URL.indexOf('sua-url-supabase') === -1) {
+            try {
+                const { data, error } = await supabaseClient.rpc('cadastrar_funcionario', {
+                    p_matricula: matricula,
+                    p_nome: nome,
+                    p_pin: pin,
+                    p_foto_facial_url: fotoFacialUrl
+                });
+                if (error) throw error;
+                return data;
+            } catch (err) {
+                console.warn('Falha RPC Supabase, alternando para Mock local:', err.message);
+            }
+        }
+
+        // Execução em MOCK LOCAL
+        await new Promise(resolve => setTimeout(resolve, 100));
+
+        if (this._mockData.funcionarios[matricula]) {
+            return {
+                sucesso: false,
+                codigo: 'MATRICULA_JA_EXISTE',
+                mensagem: 'Esta matrícula já está cadastrada no sistema.'
+            };
+        }
+
+        // Salvar no mock local
+        this._mockData.funcionarios[matricula] = {
+            nome: nome,
+            pin: pin,
+            fotoFacial: fotoFacialUrl
+        };
+
+        return {
+            sucesso: true,
+            codigo: 'SUCESSO',
+            mensagem: 'Funcionário e foto facial cadastrados com sucesso!',
+            matricula: matricula,
+            nome: nome
+        };
     },
 
     /**

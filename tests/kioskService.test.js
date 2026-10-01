@@ -1,6 +1,6 @@
 /**
  * TEST SUITE - Kiosk Ponto Eletrônico
- * Valida a lógica de KioskService (Entrada, Saída, HMAC e Antifraude por SHA-256)
+ * Valida a lógica de KioskService (Cadastro de Funcionário com Foto Facial, Entrada, Saída, HMAC e Antifraude por SHA-256)
  */
 
 const crypto = require('crypto');
@@ -33,6 +33,14 @@ async function runTests() {
             console.error(`[FAIL] ${message}`);
         }
     }
+
+    // TEST 0: Cadastro de Novo Funcionário com Foto Facial
+    const resCadastro = await KioskService.cadastrarFuncionario('1003', 'Maria Souza', '4321', 'data:image/jpeg;base64,fakeDataUrl');
+    assert(resCadastro.sucesso === true && resCadastro.matricula === '1003', 'Deve cadastrar novo funcionário com sucesso');
+
+    // TEST 0.1: Registro de Entrada do Funcionário recém cadastrado
+    const resEntradaNovo = await KioskService.registrarEntrada('1003', '4321');
+    assert(resEntradaNovo.sucesso === true && resEntradaNovo.funcionario_nome === 'Maria Souza', 'Novo funcionário deve conseguir registrar Entrada');
 
     // TEST 1: Validação de Matrícula e PIN incorretos
     const resPinInvalido = await KioskService.registrarEntrada('1001', '0000');

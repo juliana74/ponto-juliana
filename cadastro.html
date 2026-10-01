@@ -1,0 +1,112 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Cadastro de Funcionário - Kiosk Ponto</title>
+    <!-- CSS Nativo unificado -->
+    <link rel="stylesheet" href="css/styles.css">
+    <!-- Lucide Icons CDN -->
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <!-- Supabase JS CDN (v2) -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+</head>
+<body>
+    <div class="kiosk-container">
+        <!-- Header -->
+        <header class="kiosk-header">
+            <div class="brand-info">
+                <i data-lucide="user-plus" class="brand-icon"></i>
+                <div class="brand-text">
+                    <h1>Cadastro de Funcionário</h1>
+                    <span class="sub-text">Inclusão de Matrícula, Senha (PIN) e Foto Facial</span>
+                </div>
+            </div>
+
+            <a href="index.html" class="btn-modal-cancel" style="display: flex; align-items: center; gap: 0.5rem; text-decoration: none;">
+                <i data-lucide="arrow-left" style="width:18px; height:18px;"></i>
+                <span>Voltar ao Kiosk</span>
+            </a>
+        </header>
+
+        <!-- Main Registration Form Layout -->
+        <main class="kiosk-main">
+            <!-- Left Side: Registration Fields -->
+            <section class="pinpad-section">
+                <div class="card pinpad-card" style="justify-content: flex-start; gap: 1.2rem;">
+                    <div class="card-header">
+                        <h2>Dados do Colaborador</h2>
+                        <p>Preencha as informações para registrar o funcionário no sistema</p>
+                    </div>
+
+                    <form id="formCadastroFuncionario" onsubmit="handleCadastrarFuncionario(event)">
+                        <div class="form-group">
+                            <label for="cadMatricula">Número de Cadastro (Matrícula) *</label>
+                            <input type="text" id="cadMatricula" placeholder="Ex: 1003" required pattern="\d{1,10}">
+                        </div>
+
+                        <div class="form-group">
+                            <label for="cadNome">Nome Completo *</label>
+                            <input type="text" id="cadNome" placeholder="Ex: Maria Souza" required>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="cadPin">Senha / PIN Numérico (4 a 8 dígitos) *</label>
+                            <input type="password" id="cadPin" placeholder="Ex: 4321" required pattern="\d{4,8}">
+                        </div>
+
+                        <div class="form-group">
+                            <label>Status da Foto Facial *</label>
+                            <div class="receipt-row alert-row" id="facialPhotoStatusRow" style="background-color: var(--bg-secondary); border: 1px solid var(--border-color); color: var(--text-primary);">
+                                <i data-lucide="camera" style="width:20px; height:20px; color: var(--brand-primary);"></i>
+                                <span id="facialPhotoStatusText">Pendente (Capture a foto ao lado)</span>
+                            </div>
+                        </div>
+
+                        <div class="modal-footer" style="padding: 1rem 0 0 0; border: none;">
+                            <button type="submit" class="btn-modal-submit" id="btnSubmitCadastro" style="width: 100%; justify-content: center; padding: 1rem;">
+                                <i data-lucide="check-circle-2"></i>
+                                <span>Cadastrar Funcionário</span>
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </section>
+
+            <!-- Right Side: Camera Facial Capture -->
+            <section class="actions-section">
+                <div class="card actions-card" style="justify-content: flex-start; gap: 1rem;">
+                    <div class="card-header">
+                        <h2>Cadastro Facial (Câmera)</h2>
+                        <p>Posicione o rosto em frente à câmera e clique em Capturar Foto</p>
+                    </div>
+
+                    <div class="camera-preview-container" style="height: 280px; position: relative;">
+                        <video id="webcamCadastro" autoplay playsinline muted style="width:100%; height:100%; object-fit:cover;"></video>
+                        <canvas id="photoCanvasCadastro" style="display:none;"></canvas>
+                        <img id="photoSnapshotPreview" style="display:none; width:100%; height:100%; object-fit:cover; position:absolute; top:0; left:0;" alt="Foto capturada">
+                    </div>
+
+                    <div style="display: flex; gap: 1rem;">
+                        <button type="button" class="action-btn btn-entry" onclick="captureFacialPhoto()" style="flex:1; justify-content: center;">
+                            <div class="action-icon"><i data-lucide="camera"></i></div>
+                            <span class="action-title" style="font-size:1rem;">Capturar Foto</span>
+                        </button>
+
+                        <button type="button" class="action-btn btn-exit" id="btnRetakePhoto" onclick="resetFacialPhoto()" style="flex:1; justify-content: center; display:none;">
+                            <div class="action-icon"><i data-lucide="refresh-cw"></i></div>
+                            <span class="action-title" style="font-size:1rem;">Nova Foto</span>
+                        </button>
+                    </div>
+                </div>
+            </section>
+        </main>
+    </div>
+
+    <!-- Scripts -->
+    <script src="js/utils.js"></script>
+    <script src="js/supabaseClient.js"></script>
+    <script src="js/kioskService.js"></script>
+    <script src="js/cadastro.js"></script>
+</body>
+</html>

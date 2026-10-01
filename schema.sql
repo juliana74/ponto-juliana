@@ -33,6 +33,7 @@ CREATE TABLE IF NOT EXISTS funcionarios (
     matricula VARCHAR(50) UNIQUE NOT NULL,
     nome VARCHAR(255) NOT NULL,
     pin_hash VARCHAR(64) NOT NULL, -- SHA-256 em hexadecimal
+    foto_facial_url TEXT,
     turno_id UUID REFERENCES turnos(id) ON DELETE SET NULL,
     ativo BOOLEAN DEFAULT TRUE,
     criado_em TIMESTAMPTZ DEFAULT NOW()
@@ -79,6 +80,7 @@ ALTER TABLE registros_ponto ENABLE ROW LEVEL SECURITY;
 CREATE POLICY "Permitir leitura anonima de empresa" ON empresa FOR SELECT USING (true);
 CREATE POLICY "Permitir leitura anonima de turnos" ON turnos FOR SELECT USING (true);
 CREATE POLICY "Permitir leitura anonima de funcionarios" ON funcionarios FOR SELECT USING (ativo = true);
+CREATE POLICY "Permitir insercao anonima de funcionarios" ON funcionarios FOR INSERT WITH CHECK (true);
 CREATE POLICY "Permitir leitura de registros pelo anon" ON registros_ponto FOR SELECT USING (true);
 CREATE POLICY "Permitir insercao de registros pelo anon" ON registros_ponto FOR INSERT WITH CHECK (true);
 CREATE POLICY "Permitir leitura de justificativas" ON justificativas FOR SELECT USING (true);
@@ -87,6 +89,50 @@ CREATE POLICY "Permitir insercao de justificativas" ON justificativas FOR INSERT
 -- --------------------------------------------------------------------
 -- 3. PROCEDURES / RPCs DO SUPABASE
 -- --------------------------------------------------------------------
+
+-- RPC 0: Cadastrar Funcionário com Foto Facial
+CREATE OR REPLACE FUNCTION cadastrar_funcionario(
+    p_matricula TEXT,
+    p_nome TEXT,
+    p_pin TEXT,
+    p_foto_facial_url TEXT DEFAULT NULL
+)
+RETURNS JSON
+LANGUAGE plpgsql
+SECURITY DEFINER
+AS $$
+DECLARE
+    v_existente INT;
+    v_pin_hash VARCHAR(64);
+    v_func_id UUID;
+BEGIN
+    -- 1. Verificar duplicidade de matrícula
+    SELECT COUNT(*) INTO v_existente
+    FROM funcionarios
+    WHERE matricula = p_matricula;
+
+    IF v_existente > 0 THEN
+        RETURN json_build_object('sucesso', false, 'codigo', 'MATRICULA_JA_EXISTE', 'mensagem', 'Esta matrícula já está cadastrada no sistema.');
+    END IF;
+
+    -- 2. Calcular SHA-256 do PIN
+    v_pin_hash := encode(digest(p_pin, 'sha256'), 'hex');
+
+    -- 3. Inserir funcionário
+    INSERT INTO funcionarios (matricula, nome, pin_hash, foto_facial_url, ativo)
+    VALUES (p_matricula, p_nome, v_pin_hash, p_foto_facial_url, TRUE)
+    RETURNING id INTO v_func_id;
+
+    RETURN json_build_object(
+        'sucesso', true,
+        'codigo', 'SUCESSO',
+        'mensagem', 'Funcionário e foto facial cadastrados com sucesso!',
+        'funcionario_id', v_func_id,
+        'matricula', p_matricula,
+        'nome', p_nome
+    );
+END;
+$$;
 
 -- RPC 1: Registrar Entrada
 CREATE OR REPLACE FUNCTION registrar_entrada(
@@ -351,8 +397,6 @@ VALUES ('b1eebc99-9c0b-4ef8-bb6d-6bb9bd380a22', 'Comercial 08h às 17h', '08:00:
 ON CONFLICT DO NOTHING;
 
 -- Inserir Funcionários de Teste (PINs em SHA-256)
--- PIN '1234' = digest('1234', 'sha256') -> '03ac674216f3e15c761ee1a5e255f067953623c8b388b4459e13f978d7c846f4'
--- PIN '5678' = digest('5678', 'sha256') -> '3f786850e387550fdab833ed70d800cbc21f28121697263013d2a02479e0004f'
 INSERT INTO funcionarios (matricula, nome, pin_hash, turno_id)
 VALUES
     ('1001', 'Ana Silva', encode(digest('1234', 'sha256'), 'hex'), 'b1eebc99-9c0b-4ef8-bb6d-6bb9bd380a22'),
