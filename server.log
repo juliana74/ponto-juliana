@@ -1,0 +1,6 @@
+127.0.0.1 - - [01/Oct/2026 17:06:16] "GET / HTTP/1.1" 200 -
+127.0.0.1 - - [01/Oct/2026 17:06:17] "GET /js/kioskService.js HTTP/1.1" 200 -
+127.0.0.1 - - [01/Oct/2026 17:06:17] "GET /js/utils.js HTTP/1.1" 200 -
+127.0.0.1 - - [01/Oct/2026 17:06:17] "GET /js/supabaseClient.js HTTP/1.1" 200 -
+127.0.0.1 - - [01/Oct/2026 17:06:17] "GET /css/styles.css HTTP/1.1" 200 -
+127.0.0.1 - - [01/Oct/2026 17:06:17] "GET /js/app.js HTTP/1.1" 200 -

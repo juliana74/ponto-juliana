@@ -1,0 +1,260 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Kiosk Ponto Eletrônico</title>
+    <!-- CSS Nativo -->
+    <link rel="stylesheet" href="css/styles.css">
+    <!-- Lucide Icons CDN -->
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <!-- Supabase JS CDN (v2) -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <!-- CryptoJS CDN (para hashing de arquivo se necessário) -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/crypto-js/4.1.1/crypto-js.min.js"></script>
+</head>
+<body>
+    <div class="kiosk-container">
+        <!-- Header -->
+        <header class="kiosk-header">
+            <div class="brand-info">
+                <i data-lucide="building-2" class="brand-icon"></i>
+                <div class="brand-text">
+                    <h1 id="companyName">Empresa Kiosk Ponto</h1>
+                    <span class="sub-text">Sistema Eletrônico de Ponto & Justificativas</span>
+                </div>
+            </div>
+
+            <div class="clock-display">
+                <div class="time-text" id="liveClock">00:00:00</div>
+                <div class="date-text" id="liveDate">Carregando data...</div>
+            </div>
+
+            <div class="status-badge online" id="connectionStatus">
+                <i data-lucide="wifi" class="status-icon"></i>
+                <span>Online</span>
+            </div>
+        </header>
+
+        <!-- Main Content -->
+        <main class="kiosk-main">
+            <!-- Left Side: PinPad & Input Form -->
+            <section class="pinpad-section">
+                <div class="card pinpad-card">
+                    <div class="card-header">
+                        <h2>Identificação do Colaborador</h2>
+                        <p>Insira sua matrícula e PIN numérico de acesso</p>
+                    </div>
+
+                    <div class="input-group-tabs">
+                        <button class="tab-btn active" id="tabMatricula" onclick="switchInputFocus('matricula')">
+                            <i data-lucide="user"></i>
+                            <span>Matrícula</span>
+                        </button>
+                        <button class="tab-btn" id="tabPin" onclick="switchInputFocus('pin')">
+                            <i data-lucide="lock"></i>
+                            <span>PIN</span>
+                        </button>
+                    </div>
+
+                    <div class="display-inputs">
+                        <div class="input-field" id="fieldMatriculaWrapper" onclick="switchInputFocus('matricula')">
+                            <label>Matrícula:</label>
+                            <span class="input-val" id="valMatricula">---</span>
+                        </div>
+                        <div class="input-field" id="fieldPinWrapper" onclick="switchInputFocus('pin')">
+                            <label>PIN (4 dígitos):</label>
+                            <span class="input-val" id="valPin">••••</span>
+                        </div>
+                    </div>
+
+                    <!-- Virtual Numpad -->
+                    <div class="numpad-grid">
+                        <button class="num-btn" onclick="pressNum('1')">1</button>
+                        <button class="num-btn" onclick="pressNum('2')">2</button>
+                        <button class="num-btn" onclick="pressNum('3')">3</button>
+                        <button class="num-btn" onclick="pressNum('4')">4</button>
+                        <button class="num-btn" onclick="pressNum('5')">5</button>
+                        <button class="num-btn" onclick="pressNum('6')">6</button>
+                        <button class="num-btn" onclick="pressNum('7')">7</button>
+                        <button class="num-btn" onclick="pressNum('8')">8</button>
+                        <button class="num-btn" onclick="pressNum('9')">9</button>
+                        <button class="num-btn btn-clear" onclick="pressClear()">C</button>
+                        <button class="num-btn" onclick="pressNum('0')">0</button>
+                        <button class="num-btn btn-backspace" onclick="pressBackspace()">
+                            <i data-lucide="delete"></i>
+                        </button>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Right Side: Actions Panel -->
+            <section class="actions-section">
+                <div class="card actions-card">
+                    <h2>Selecione a Ação</h2>
+                    <p>Toque em um dos botões abaixo para concluir o registro</p>
+
+                    <div class="actions-grid">
+                        <button class="action-btn btn-entry" onclick="handleRegistrarPonto('ENTRADA')">
+                            <div class="action-icon"><i data-lucide="log-in"></i></div>
+                            <div class="action-details">
+                                <span class="action-title">Registrar ENTRADA</span>
+                                <span class="action-sub">Início da jornada de trabalho</span>
+                            </div>
+                        </button>
+
+                        <button class="action-btn btn-exit" onclick="handleRegistrarPonto('SAIDA')">
+                            <div class="action-icon"><i data-lucide="log-out"></i></div>
+                            <div class="action-details">
+                                <span class="action-title">Registrar SAÍDA</span>
+                                <span class="action-sub">Término da jornada de trabalho</span>
+                            </div>
+                        </button>
+
+                        <button class="action-btn btn-justification" onclick="openJustificationModal()">
+                            <div class="action-icon"><i data-lucide="file-check-2"></i></div>
+                            <div class="action-details">
+                                <span class="action-title">Enviar Atestado / Justificativa</span>
+                                <span class="action-sub">Upload com validação Antifraude</span>
+                            </div>
+                        </button>
+                    </div>
+
+                    <!-- Sensor / Camera status indicator -->
+                    <div class="camera-preview-container">
+                        <div class="camera-header">
+                            <i data-lucide="camera" class="cam-icon"></i>
+                            <span>Validação Visual (Câmera Ativa)</span>
+                        </div>
+                        <div class="camera-view">
+                            <video id="webcam" autoplay playsinline muted></video>
+                            <canvas id="photoCanvas" style="display:none;"></canvas>
+                            <div class="camera-overlay">
+                                <span id="camStatusText">Pronto para captura</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+        </main>
+    </div>
+
+    <!-- MODAL 1: Comprovante Digital (Ticket HMAC) -->
+    <div class="modal-overlay" id="ticketModal">
+        <div class="modal-card">
+            <div class="modal-header header-success" id="ticketHeader">
+                <i data-lucide="check-circle-2" class="modal-icon"></i>
+                <h3 id="ticketTitle">Ponto Registrado com Sucesso!</h3>
+            </div>
+            <div class="modal-body">
+                <div class="receipt-box">
+                    <div class="receipt-row">
+                        <span class="label">Colaborador:</span>
+                        <span class="val" id="receiptNome">Ana Silva</span>
+                    </div>
+                    <div class="receipt-row">
+                        <span class="label">Matrícula:</span>
+                        <span class="val" id="receiptMatricula">1001</span>
+                    </div>
+                    <div class="receipt-row">
+                        <span class="label">Tipo de Registro:</span>
+                        <span class="val highlight" id="receiptTipo">ENTRADA</span>
+                    </div>
+                    <div class="receipt-row">
+                        <span class="label">Data & Hora:</span>
+                        <span class="val" id="receiptDataHora">01/01/2025 08:00:00</span>
+                    </div>
+                    <div class="receipt-row" id="receiptHorasRow" style="display:none;">
+                        <span class="label">Jornada Calculada:</span>
+                        <span class="val" id="receiptHoras">8.00 hrs</span>
+                    </div>
+                    <div class="receipt-row alert-row" id="receiptAlertRow" style="display:none;">
+                        <i data-lucide="alert-triangle" class="alert-icon"></i>
+                        <span id="receiptAlertMsg">Atraso registrado</span>
+                    </div>
+
+                    <div class="receipt-hmac-block">
+                        <span class="hmac-label">Comprovante de Autenticidade HMAC:</span>
+                        <div class="hmac-code" id="receiptHMAC">A1B2C3D4E5F6</div>
+                        <span class="hmac-sub">Tire uma foto desta tela para guardar seu comprovante</span>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn-modal-close" onclick="closeTicketModal()">Concluir e Voltar</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- MODAL 2: Cadastro de Atestados / Justificativas com Antifraude -->
+    <div class="modal-overlay" id="justificationModal">
+        <div class="modal-card modal-large">
+            <div class="modal-header header-primary">
+                <i data-lucide="file-text" class="modal-icon"></i>
+                <h3>Enviar Atestado / Justificativa</h3>
+                <button class="btn-icon-close" onclick="closeJustificationModal()">
+                    <i data-lucide="x"></i>
+                </button>
+            </div>
+            <div class="modal-body">
+                <form id="formJustification" onsubmit="handleSendJustification(event)">
+                    <div class="form-row-2">
+                        <div class="form-group">
+                            <label for="justMatricula">Matrícula *</label>
+                            <input type="text" id="justMatricula" placeholder="Digite sua matrícula" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="justPin">PIN Numérico *</label>
+                            <input type="password" id="justPin" maxlength="6" placeholder="Digite seu PIN" required>
+                        </div>
+                    </div>
+
+                    <div class="form-row-2">
+                        <div class="form-group">
+                            <label for="justDataInicio">Data Início *</label>
+                            <input type="date" id="justDataInicio" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="justDataFim">Data Fim *</label>
+                            <input type="date" id="justDataFim" required>
+                        </div>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="justMotivo">Motivo / Descrição *</label>
+                        <input type="text" id="justMotivo" placeholder="Ex: Atestado Médico, Consulta, etc." required>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="justFile">Arquivo do Atestado (PDF ou Imagem) *</label>
+                        <input type="file" id="justFile" accept="image/*,application/pdf" onchange="onJustificationFileSelected(event)" required>
+                    </div>
+
+                    <!-- Realtime SHA256 preview box -->
+                    <div class="hash-preview-box" id="hashPreviewBox" style="display:none;">
+                        <div class="hash-header">
+                            <i data-lucide="shield-check" class="shield-icon"></i>
+                            <span>Hash Antifraude Calculado (SHA-256):</span>
+                        </div>
+                        <code id="computedHashDisplay">---</code>
+                    </div>
+
+                    <div class="modal-footer">
+                        <button type="button" class="btn-modal-cancel" onclick="closeJustificationModal()">Cancelar</button>
+                        <button type="submit" class="btn-modal-submit" id="btnSubmitJustification">
+                            <i data-lucide="upload-cloud"></i>
+                            <span>Validar & Enviar Atestado</span>
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Scripts da aplicação -->
+    <script src="js/utils.js"></script>
+    <script src="js/supabaseClient.js"></script>
+    <script src="js/kioskService.js"></script>
+    <script src="js/app.js"></script>
+</body>
+</html>
