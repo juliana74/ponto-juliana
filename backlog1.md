@@ -1,0 +1,6 @@
+- Faça com que a câmera funcione e tenha utilidade para cadastro facial;
+- Faça uma página de cadastro de funcionário, onde se inclua o número de cadastro e senha e com o cadastro facial;
+- Sem alterar qualquer coisa do código inicial;
+- Conecte esse novo código ao repositório GitHub;
+- Coloque o CSS já feito incluso nessa nova página;
+- Coloque um botão para cadastrar usuário na página já existente.
